@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String
+  password      String       // hashed password
+  role          Role         @default(STUDENT)
+  level         Level?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  submissions   Submission[]
+  feedbacksGiven Feedback[]  @relation("GivenFeedback")
+  progress      Progress[]
+
+  @@index([email])
+  @@index([role])
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  HIFZ
+}
+
+model Assignment {
+  id          String       @id @default(cuid())
+  type        TestType
+  surah       Int?
+  startVerse  Int?
+  endVerse    Int?
+  description String?
+  dueDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  submissions Submission[]
+
+  @@index([type])
+  @@index([dueDate])
+}
+
+enum TestType {
+  HIFZ        // Memorisatie - tekst niet zichtbaar
+  TILAWAH     // Recitatie - tekst zichtbaar
+  TAJWEED     // Theorie + praktijk
+}
+
+model Submission {
+  id           String     @id @default(cuid())
+  studentId    String
+  assignmentId String
+  audioUrl     String
+  duration     Int        // in seconden
+  status       Status     @default(PENDING)
+  grade        Float?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  student      User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  feedbacks    Feedback[]
+
+  @@index([studentId])
+  @@index([assignmentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum Status {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  RETRY_REQUESTED
+}
+
+model Feedback {
+  id           String        @id @default(cuid())
+  submissionId String
+  adminId      String
+  timestamp    Float         // tijdstip in audio (seconden)
+  comment      String
+  category     ErrorCategory?
+  audioUrl     String?       // optionele audio feedback
+  createdAt    DateTime      @default(now())
+
+  submission   Submission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  admin        User          @relation("GivenFeedback", fields: [adminId], references: [id])
+
+  @@index([submissionId])
+  @@index([adminId])
+}
+
+enum ErrorCategory {
+  MADD
+  GHUNNAH
+  IKHFA
+  IZHAR
+  IDGHAM
+  QALQALAH
+  PRONUNCIATION
+  OTHER
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  studentId String
+  surah     Int
+  completed Boolean  @default(false)
+  grade     Float?
+  updatedAt DateTime @updatedAt
+
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, surah])
+  @@index([studentId])
+  @@index([surah])
+}
