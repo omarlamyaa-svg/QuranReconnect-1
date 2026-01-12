@@ -234,14 +234,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     }),
     prisma.submission.findMany({
       include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            level: true,
-          },
-        },
+        student: true,
         assignment: true,
         feedbacks: true,
       },

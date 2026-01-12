@@ -23,7 +23,7 @@ export function HifzMap({ progress, onSurahClick }: HifzMapProps) {
     }
 
     if (surahProgress.completed) {
-      if (surahProgress.grade !== null) {
+      if (surahProgress.grade !== null && surahProgress.grade !== undefined) {
         if (surahProgress.grade >= 8) {
           return 'bg-success-500 border-success-600 text-white'
         } else if (surahProgress.grade >= 6) {

@@ -52,7 +52,7 @@ export function ProgressTracker({ progress, limit }: ProgressTrackerProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              {item.grade !== null && (
+              {item.grade != null && (
                 <div className="text-center">
                   <div
                     className={`text-2xl font-bold ${
