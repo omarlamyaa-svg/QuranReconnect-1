@@ -1,37 +1,56 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Wachtwoorden komen niet overeen')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Wachtwoord moet minimaal 6 karakters zijn')
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
       })
 
-      if (result?.error) {
-        setError(result.error)
-      } else {
-        router.push('/dashboard')
-        router.refresh()
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Registratie mislukt')
       }
+
+      router.push('/auth/login?registered=true')
     } catch (err) {
-      setError('Er is een fout opgetreden bij het inloggen')
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden')
     } finally {
       setIsLoading(false)
     }
@@ -69,20 +88,20 @@ export default function LoginPage() {
 
           {/* Arabic greeting */}
           <p className="arabic-text text-xl gold-accent mb-4 opacity-80">
-            السَّلَامُ عَلَيْكُمْ
+            مَرْحَبًا بِكَ
           </p>
 
           <h1 className="text-3xl md:text-4xl mb-3" style={{ fontFamily: 'var(--font-display)' }}>
-            <span className="gold-gradient-text">Welkom terug</span>
+            <span className="gold-gradient-text">Account Aanmaken</span>
           </h1>
           <p className="text-[var(--ivory-dim)]">
-            Log in om uw reis voort te zetten
+            Begin uw reis met de Quran
           </p>
         </div>
 
-        {/* Login Card */}
+        {/* Register Card */}
         <div className="sacred-card p-8 animate-fade-in-up delay-100">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="p-4 bg-[var(--ruby)]/20 border border-[var(--ruby)]/40 rounded-lg text-[#fca5a5] text-sm">
                 {error}
@@ -91,12 +110,26 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-medium text-[var(--ivory-dim)] mb-2">
+                Naam
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Uw volledige naam"
+                required
+                className="input-sacred"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--ivory-dim)] mb-2">
                 Email
               </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="jouw@email.nl"
                 required
                 className="input-sacred"
@@ -109,9 +142,24 @@ export default function LoginPage() {
               </label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Minimaal 6 karakters"
+                required
+                minLength={6}
+                className="input-sacred"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--ivory-dim)] mb-2">
+                Bevestig wachtwoord
+              </label>
+              <input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                placeholder="Herhaal uw wachtwoord"
                 required
                 className="input-sacred"
               />
@@ -128,43 +176,20 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Bezig met inloggen...</span>
+                  <span>Bezig met registreren...</span>
                 </>
               ) : (
-                'Inloggen'
+                'Account aanmaken'
               )}
             </button>
           </form>
-        </div>
 
-        {/* Register link */}
-        <div className="mt-6 text-center animate-fade-in-up delay-150">
-          <p className="text-sm text-[var(--ivory-dim)]">
-            Nog geen account?{' '}
-            <Link href="/auth/register" className="text-[var(--gold)] hover:underline font-medium">
-              Registreren
-            </Link>
-          </p>
-        </div>
-
-        {/* Demo accounts info */}
-        <div className="mt-6 sacred-card p-6 animate-fade-in-up delay-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-[var(--sapphire)]/30 border border-[var(--sapphire)]/50 flex items-center justify-center">
-              <svg className="w-4 h-4 text-[#93c5fd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-sm font-medium text-[var(--ivory)]">Demo accounts</p>
-          </div>
-          <div className="space-y-2 text-sm text-[var(--ivory-dim)]">
-            <p className="flex items-center gap-2">
-              <span className="badge-sacred badge-pending text-xs">Student</span>
-              <span>student@example.com / password</span>
-            </p>
-            <p className="flex items-center gap-2">
-              <span className="badge-sacred badge-approved text-xs">Docent</span>
-              <span>admin@example.com / password</span>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-[var(--ivory-dim)]">
+              Heeft u al een account?{' '}
+              <Link href="/auth/login" className="text-[var(--gold)] hover:underline">
+                Inloggen
+              </Link>
             </p>
           </div>
         </div>
