@@ -56,10 +56,22 @@ export async function POST(request: Request) {
         email: user.email,
       },
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error)
+
+    // Provide more specific error messages
+    let errorMessage = 'Er is een fout opgetreden bij het registreren'
+
+    if (error?.message?.includes("Can't reach database")) {
+      errorMessage = 'Database niet bereikbaar. Het Supabase project is mogelijk gepauzeerd.'
+    } else if (error?.code === 'P2002') {
+      errorMessage = 'Er bestaat al een account met dit emailadres'
+    } else if (error?.message) {
+      errorMessage = `Database fout: ${error.message.substring(0, 100)}`
+    }
+
     return NextResponse.json(
-      { error: 'Er is een fout opgetreden bij het registreren' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
