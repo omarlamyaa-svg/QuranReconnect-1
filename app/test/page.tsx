@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { surahs } from '@/lib/data/surahs'
+import { SURAHS } from '@/lib/data/surahs'
 
 type TestType = 'HIFZ' | 'RECITATION' | 'TAJWEED'
 
@@ -54,7 +54,7 @@ export default function TestPage() {
     }
   }, [audioUrl])
 
-  const selectedSurah = formData.surah ? surahs.find(s => s.number === formData.surah) : null
+  const selectedSurah = formData.surah ? SURAHS.find(s => s.number === formData.surah) : null
 
   const startRecording = async () => {
     try {
@@ -360,7 +360,7 @@ export default function TestPage() {
                   className="input-sacred"
                 >
                   <option value="">Selecteer een surah...</option>
-                  {surahs.map((surah) => (
+                  {SURAHS.map((surah) => (
                     <option key={surah.number} value={surah.number}>
                       {surah.number}. {surah.name} ({surah.arabicName}) - {surah.verses} ayaat
                     </option>
