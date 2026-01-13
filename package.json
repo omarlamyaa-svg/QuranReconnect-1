@@ -14,9 +14,10 @@
     "seed": "tsx scripts/create-users.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.8.0",
     "@aws-sdk/client-s3": "^3.478.0",
     "@aws-sdk/s3-request-presigner": "^3.478.0",
+    "@prisma/client": "^5.8.0",
+    "@supabase/supabase-js": "^2.90.1",
     "bcryptjs": "^2.4.3",
     "next": "14.1.0",
     "next-auth": "^4.24.5",

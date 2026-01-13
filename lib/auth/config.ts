@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
-import { prisma } from '@/lib/db/prisma'
+import { supabaseAdmin } from '@/lib/supabase/client'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,11 +16,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email en wachtwoord zijn verplicht')
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+        const { data: user, error } = await supabaseAdmin
+          .from('User')
+          .select('*')
+          .eq('email', credentials.email)
+          .single()
 
-        if (!user) {
+        if (error || !user) {
           throw new Error('Geen account gevonden met dit emailadres')
         }
 

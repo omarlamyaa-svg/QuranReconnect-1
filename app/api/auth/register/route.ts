@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
-import { prisma } from '@/lib/db/prisma'
+import { supabaseAdmin } from '@/lib/supabase/client'
 
 export async function POST(request: Request) {
   try {
@@ -22,9 +22,11 @@ export async function POST(request: Request) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
+    const { data: existingUser } = await supabaseAdmin
+      .from('User')
+      .select('id')
+      .eq('email', email)
+      .single()
 
     if (existingUser) {
       return NextResponse.json(
@@ -36,16 +38,32 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await hash(password, 12)
 
+    // Generate unique ID
+    const id = `c${Date.now()}${Math.random().toString(36).substring(2, 9)}`
+
     // Create user
-    const user = await prisma.user.create({
-      data: {
+    const { data: user, error } = await supabaseAdmin
+      .from('User')
+      .insert({
+        id,
         name,
         email,
         password: hashedPassword,
         role: 'STUDENT',
         level: 'BEGINNER',
-      },
-    })
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json(
+        { error: `Database fout: ${error.message}` },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
@@ -58,20 +76,8 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error('Registration error:', error)
-
-    // Provide more specific error messages
-    let errorMessage = 'Er is een fout opgetreden bij het registreren'
-
-    if (error?.message?.includes("Can't reach database")) {
-      errorMessage = 'Database niet bereikbaar. Het Supabase project is mogelijk gepauzeerd.'
-    } else if (error?.code === 'P2002') {
-      errorMessage = 'Er bestaat al een account met dit emailadres'
-    } else if (error?.message) {
-      errorMessage = `Database fout: ${error.message.substring(0, 100)}`
-    }
-
     return NextResponse.json(
-      { error: errorMessage },
+      { error: `Er is een fout opgetreden: ${error?.message || 'Onbekende fout'}` },
       { status: 500 }
     )
   }
